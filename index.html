@@ -1,29 +1,72 @@
-<script>
-const API_BASE = "https://<tuo-servizio>.onrender.com"; // ← URL Render
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Apri Porta - NEASPACE</title>
+  <style>
+    .button-container { text-align:center; margin-top:50px; }
+    .slider-btn { font-size:22px; padding:20px 40px; border-radius:12px; background:#0088cc; color:#fff; border:none; cursor:pointer; }
+    .nea-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
+    .nea-modal .box{background:#fff;border-radius:14px;padding:22px 24px;max-width:520px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-family:inherit;text-align:center}
+    .nea-modal .box h3{margin:0 0 10px;font-size:22px}
+    .nea-modal .box p{margin:0 0 16px;font-size:16px;line-height:1.5}
+    .nea-modal .box button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;background:#111;color:#fff}
+  </style>
+</head>
+<body>
+  <div class="button-container">
+    <button class="slider-btn" onclick="openDoor()" style="text-align:center;">
+      &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Click to Open
+    </button>
+  </div>
 
-async function openDoor() {
-  const bookingId = new URL(location.href).searchParams.get('b')?.replace(/\D/g,'');
-  if (!bookingId) { alert('❌ Booking ID mancante (?b=...)'); return; }
+  <div id="neaModal" class="nea-modal" role="dialog" aria-modal="true">
+    <div class="box">
+      <h3>Accesso non disponibile</h3>
+      <p id="neaMsg">🚪 La porta si apre solo nelle date del tuo booking.</p>
+      <button onclick="document.getElementById('neaModal').style.display='none'">Ok</button>
+    </div>
+  </div>
 
-  // 1) prendo le date dal backend
-  const r = await fetch(`${API_BASE}/checkBooking?b=${bookingId}`);
-  const j = await r.json();
-  if (!j.ok) { alert('Errore checkBooking: ' + (j.error || '')); return; }
+  <script>
+  const API_BASE = "https://one9rueneuve.onrender.com"; // ← tuo backend Render
 
-  const [ay,am,ad] = j.arrival.split('-').map(Number);
-  const [dy,dm,dd] = j.departure.split('-').map(Number);
-  const arrival = new Date(ay,am-1,ad);
-  const departure = new Date(dy,dm-1,dd);
-  const same = d => (d.setHours(0,0,0,0), d);
-  const allowed = same(new Date()) >= same(new Date(arrival)) && same(new Date()) <= same(new Date(departure));
+  const sameDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
+  const fmt = d => d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
 
-  if (allowed) {
-    // invio lato server (token Telegram nascosto)
-    const win = window.open(`${API_BASE}/notify?text=${encodeURIComponent('🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta. Sali al secondo piano, porta destra, keybox 0204. Scrivici quando arrivi!')}`, "_blank");
-    setTimeout(()=>{ try{ if(win) win.close(); }catch(_){} }, 1000);
-  } else {
-    const fmt = d => d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-    alert(`🚪 La porta si apre solo tra ${fmt(arrival)} e ${fmt(departure)}.`);
+  async function openDoor() {
+    try {
+      const bookingId = new URL(location.href).searchParams.get('b')?.replace(/\D/g,'');
+      if (!bookingId) { alert('❌ Booking ID mancante (?b=...)'); return; }
+
+      // 1) prendo le date dal backend (proxy Smoobu)
+      const r = await fetch(`${API_BASE}/checkBooking?b=${bookingId}`);
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || 'Errore checkBooking');
+
+      const [ay,am,ad] = j.arrival.split('-').map(Number);
+      const [dy,dm,dd] = j.departure.split('-').map(Number);
+      const arrival = new Date(ay,am-1,ad);
+      const departure = new Date(dy,dm-1,dd);
+
+      const today = sameDay(new Date());
+      const allowed = today >= sameDay(arrival) && today <= sameDay(departure);
+
+      if (allowed) {
+        // 2) invio messaggio lato server (token Telegram nascosto)
+        const text = "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta. Sali al secondo piano, porta destra, e recupera le chiavi dalla keybox (codice 0204). Mandaci un messaggio quando arrivi!";
+        const win = window.open(`${API_BASE}/notify?text=${encodeURIComponent(text)}`, "_blank");
+        setTimeout(()=>{ try{ if(win) win.close(); }catch(_){} }, 1000);
+      } else {
+        document.getElementById('neaMsg').textContent =
+          `🚪 La porta si apre solo tra ${fmt(arrival)} e ${fmt(departure)}.`;
+        document.getElementById('neaModal').style.display = 'flex';
+      }
+    } catch (e) {
+      console.error(e);
+      alert('⚠️ Errore: ' + e.message);
+    }
   }
-}
-</script>
+  </script>
+</body>
+</html>
