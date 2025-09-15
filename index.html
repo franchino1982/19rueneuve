@@ -1,36 +1,69 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Apri Porta - NEASPACE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <style>
-    body { background-color:#EAF6FF; color:#1a1a1a; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; padding:0; text-align:center; font-size:18px; }
-    .header { background:#fff; padding:16px 10px; display:flex; align-items:center; justify-content:center; gap:16px; position:relative; }
-    .header img { max-height:56px; }
-    .brand { font-size:28px; font-weight:700; color:#111; }
-    .lang { position:absolute; right:12px; top:12px; }
-    .lang select { padding:6px 10px; border-radius:10px; border:1px solid #ddd; font-size:14px; }
+    :root{
+      --bg:#EAF6FF; --fg:#111; --brand:#0088cc; --card:#fff; --muted:#777;
+      --radius:14px; --shadow:0 6px 20px rgba(0,0,0,.08);
+    }
+    /* Base */
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; text-align:center;
+    }
+    /* Header */
+    .header{
+      position:sticky; top:0; z-index:10;
+      display:flex; align-items:center; justify-content:center; gap:12px;
+      background:#fff; padding:12px calc(12px + env(safe-area-inset-right));
+      border-bottom:1px solid #eef1f4;
+    }
+    .header img{height:40px}
+    .brand{font-weight:700; font-size:20px}
+    .lang{position:absolute; right:12px; inset-inline-end: max(12px, env(safe-area-inset-right));}
+    .lang select{padding:6px 10px; border-radius:10px; border:1px solid #ddd; font-size:14px; background:#fff}
 
-    .content { padding:48px 22px; }
-    h2 { font-size:28px; margin:20px auto; line-height:1.6; max-width:900px; }
-    .button-container { margin-top:28px; }
-    .slider-btn { font-size:18px; padding:14px 28px; border-radius:12px; background:#0088cc; color:#fff; border:none; cursor:pointer; }
+    /* Content */
+    .content{padding:28px 16px 12px}
+    .content h2{font-size:clamp(18px, 2.2vw + 14px, 28px); line-height:1.6; margin:0 auto 16px; max-width:980px}
 
-    /* Sezione guida */
-    .guide { padding: 10px 22px 60px; max-width: 1100px; margin: 0 auto; }
-    .guide-grid { display:grid; grid-template-columns:1fr; gap:18px; }
-    @media (min-width: 860px) { .guide-grid { grid-template-columns:1fr 1fr; } }
-    .card { background:#fff; border-radius:14px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.08); text-align:center; }
-    .guide-img { width:100%; height:auto; border-radius:10px; display:block; }
-    .caption { margin:10px 0 0; font-size:16px; }
-    .video-wrap { position:relative; width:100%; padding-bottom:56.25%; border-radius:10px; overflow:hidden; }
-    .video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+    .button-container{margin:18px auto 10px}
+    .btn{
+      font-size:16px; padding:14px 22px; border-radius:12px; border:0; cursor:pointer;
+      background:var(--brand); color:#fff; box-shadow:var(--shadow);
+      min-width:220px; touch-action:manipulation;
+    }
+
+    /* Guide section */
+    .guide{padding: 12px 16px 26px; max-width:1100px; margin:0 auto}
+    .grid{display:grid; grid-template-columns:1fr; gap:16px}
+    @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
+
+    .card{background:var(--card); border-radius:var(--radius); padding:12px; box-shadow:var(--shadow); text-align:center}
+    .guide-img{width:100%; height:auto; border-radius:10px; display:block}
+    .caption{margin:8px 0 2px; font-size:14px; color:var(--muted)}
+    .video{position:relative; width:100%; padding-bottom:56.25%; border-radius:10px; overflow:hidden}
+    .video iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
+
+    /* Footer action */
+    .footer-actions{padding:14px 16px 24px}
+    .back-btn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:14px 18px; font-size:16px; border-radius:12px; border:1px solid #cfe6fb; background:#fff;
+      color:#0a5aa6; box-shadow:var(--shadow); text-decoration:none;
+      min-width:240px; justify-content:center;
+    }
+    .back-btn:active{transform:translateY(1px)}
   </style>
 </head>
 <body>
   <div class="header">
-    <img src="https://login.smoobu.com/upload/images/website/logo/6/4/6/6/e/2/a/6/website_logo_530938_abf503416885c3141843d801c3717c2063e4bda6b56bf5268b3e1b264a7d8eae.jpg" alt="Logo NeaSpace">
+    <img src="https://login.smoobu.com/upload/images/website/logo/6/4/6/6/e/2/a/6/website_logo_530938_abf503416885c3141843d801c3717c2063e4bda6b56bf5268b3e1b264a7d8eae.jpg" alt="Logo NeaSpace" />
     <span class="brand">NeaSpace</span>
     <div class="lang">
       <select id="langSelect" aria-label="Select language">
@@ -45,23 +78,19 @@
   <div class="content" id="message">
     <h2>⏳ Controllo prenotazione in corso...</h2>
     <div class="button-container" style="display:none">
-      <button class="slider-btn" id="openBtn">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Click to Open</button>
+      <button class="btn" id="openBtn">&nbsp;&nbsp;&nbsp;Click to Open&nbsp;&nbsp;&nbsp;</button>
     </div>
   </div>
 
-  <!-- Sezione guida: immagine + video affiancati -->
-  <section class="guide">
-    <div class="guide-grid">
-      <!-- Colonna immagine -->
+  <!-- Sezione guida: immagine porta + video -->
+  <section class="guide" aria-label="How-to">
+    <div class="grid">
       <div class="card">
-        <img class="guide-img" src="https://franchino1982.github.io/19rueneuve/porta.jpg" alt="Porta di casa - NeaSpace">
-        <p class="caption" id="photoCaption">
-          <!-- testo localizzato via JS -->
-        </p>
+        <img class="guide-img" src="https://franchino1982.github.io/19rueneuve/porta.jpg" alt="Porta di casa - NeaSpace" loading="lazy" />
+        <p class="caption" id="photoCaption"></p>
       </div>
-      <!-- Colonna video -->
       <div class="card">
-        <div class="video-wrap">
+        <div class="video">
           <iframe
             src="https://www.youtube.com/embed/wyDdD1UKy4A"
             title="Come aprire e chiudere la porta di casa"
@@ -70,12 +99,17 @@
             allowfullscreen>
           </iframe>
         </div>
-        <p class="caption" id="videoCaption">
-          <!-- testo localizzato via JS -->
-        </p>
+        <p class="caption" id="videoCaption"></p>
       </div>
     </div>
   </section>
+
+  <!-- Azione finale: torna alla guida ospiti -->
+  <div class="footer-actions">
+    <a id="backLink" class="back-btn" href="#">
+      ← <span id="backLabel">Back to Guest Guide</span>
+    </a>
+  </div>
 
   <script>
     const API_BASE = "https://one9rueneuve.onrender.com";
@@ -88,9 +122,10 @@
         opened: "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta. Sali al secondo piano, porta destra, e recupera le chiavi dalla keybox con il codice 0204. Mandaci un messaggino per confermare che siete a casa!",
         outside: (s,e) => `🚫 La porta si apre solo tra ${s} e ${e}.`,
         error: "⚠️ Errore nel caricamento dati",
-        openBtn: "Click to Open",
+        openBtn: "Apri adesso",
         photoCaption: "Salite al secondo piano, porta destra, e aprite la porta con il codice 0204.",
-        videoCaption: "Video: come aprire e chiudere la porta di casa."
+        videoCaption: "Video: come aprire e chiudere la porta di casa.",
+        back: "Torna alla guida ospiti"
       },
       en: {
         loading: "⏳ Checking your booking...",
@@ -98,9 +133,10 @@
         opened: "🌞 Your NeaSpace adventure starts now: the door is open. Go to the second floor, right door, and collect the keys from the keybox using code 0204. Please message us to confirm you've arrived!",
         outside: (s,e) => `🚫 The door opens only between ${s} and ${e}.`,
         error: "⚠️ Error loading data",
-        openBtn: "Click to Open",
+        openBtn: "Open now",
         photoCaption: "Go up to the second floor, right door, and open the door with code 0204.",
-        videoCaption: "Video: how to open and close the home door."
+        videoCaption: "Video: how to open and close the home door.",
+        back: "Back to Guest Guide"
       },
       fr: {
         loading: "⏳ Vérification de votre réservation...",
@@ -108,9 +144,10 @@
         opened: "🌞 Votre aventure NeaSpace commence maintenant : la porte est ouverte. Montez au deuxième étage, porte à droite, et récupérez les clés dans la boîte à clés avec le code 0204. Merci de nous envoyer un message pour confirmer votre arrivée !",
         outside: (s,e) => `🚫 La porte s'ouvre uniquement entre le ${s} et le ${e}.`,
         error: "⚠️ Erreur lors du chargement des données",
-        openBtn: "Cliquez pour ouvrir",
+        openBtn: "Ouvrir maintenant",
         photoCaption: "Montez au deuxième étage, porte à droite, et ouvrez la porte avec le code 0204.",
-        videoCaption: "Vidéo : comment ouvrir et fermer la porte d'entrée."
+        videoCaption: "Vidéo : comment ouvrir et fermer la porte d'entrée.",
+        back: "Retour au guide des invités"
       },
       es: {
         loading: "⏳ Verificando su reserva...",
@@ -118,38 +155,61 @@
         opened: "🌞 Tu aventura en NeaSpace comienza ahora: la puerta está abierta. Sube al segundo piso, puerta a la derecha, y recoge las llaves de la caja con el código 0204. ¡Envíanos un mensaje para confirmar que has llegado!",
         outside: (s,e) => `🚫 La puerta solo se abre entre ${s} y ${e}.`,
         error: "⚠️ Error al cargar los datos",
-        openBtn: "Click para abrir",
+        openBtn: "Abrir ahora",
         photoCaption: "Sube al segundo piso, puerta derecha, y abre la puerta con el código 0204.",
-        videoCaption: "Vídeo: cómo abrir y cerrar la puerta de la casa."
+        videoCaption: "Vídeo: cómo abrir y cerrar la puerta de la casa.",
+        back: "Volver a la guía para huéspedes"
       }
     };
 
-    function detectLang() {
+    // lingua iniziale
+    function detectLang(){
       const saved = localStorage.getItem("neaspace_lang");
       if (saved && M[saved]) return saved;
-      const nav = (navigator.language || navigator.userLanguage || "en").slice(0,2).toLowerCase();
-      if (M[nav]) return nav;
-      return "en";
+      const nav = (navigator.language || "en").slice(0,2).toLowerCase();
+      return M[nav] ? nav : "en";
     }
 
-    function setLangUI(lang) {
+    function setLangUI(lang){
       document.documentElement.lang = lang;
       const sel = document.getElementById("langSelect");
       sel.value = lang;
       document.getElementById("openBtn").textContent = M[lang].openBtn;
       document.getElementById("photoCaption").textContent = M[lang].photoCaption;
       document.getElementById("videoCaption").textContent = M[lang].videoCaption;
+      document.getElementById("backLabel").textContent = M[lang].back;
     }
 
-    function fmtDateByLang(d, lang) {
+    function fmtDateByLang(d, lang){
       try {
-        return d.toLocaleDateString(lang === 'en' ? 'en-GB' : lang, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return d.toLocaleDateString(lang === 'en' ? 'en-GB' : lang, { day:'2-digit', month:'2-digit', year:'numeric' });
       } catch {
-        return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return d.toLocaleDateString(undefined, { day:'2-digit', month:'2-digit', year:'numeric' });
       }
     }
 
-    async function init() {
+    // link "torna alla guida"
+    function wireBackLink(){
+      const a = document.getElementById("backLink");
+      const ref = document.referrer || "";
+      // se arrivo dalla Guest App di Smoobu, torna lì
+      if (ref.includes("guest.smoobu.com")) {
+        a.href = ref;
+        a.onclick = null;
+      } else {
+        // altrimenti prova history.back(), poi fallback alla home Guest App
+        a.href = "https://guest.smoobu.com/";
+        a.onclick = (e) => {
+          e.preventDefault();
+          if (history.length > 1) history.back();
+          else location.href = "https://guest.smoobu.com/";
+        };
+      }
+    }
+
+    async function init(){
+      wireBackLink();
+
       let lang = detectLang();
       setLangUI(lang);
 
@@ -157,8 +217,8 @@
       const openBtn = document.getElementById("openBtn");
       const btnWrap = openBtn.parentElement;
 
-      const bookingId = new URLSearchParams(window.location.search).get('b');
-      if (!bookingId) {
+      const bookingId = new URLSearchParams(location.search).get('b');
+      if (!bookingId){
         msgBox.innerHTML = `<h2>${M[lang].missing}</h2>`;
         return;
       }
@@ -166,8 +226,8 @@
       msgBox.innerHTML = `<h2>${M[lang].loading}</h2>`;
       btnWrap.style.display = "none";
 
-      try {
-        const res = await fetch(`${API_BASE}/booking/${encodeURIComponent(bookingId)}`, { cache: 'no-store' });
+      try{
+        const res = await fetch(`${API_BASE}/booking/${encodeURIComponent(bookingId)}`, { cache:'no-store' });
         if (!res.ok) throw new Error("server");
         const data = await res.json();
         if (!data.ok || !data.start || !data.end) throw new Error(data.error || "bad-data");
@@ -177,14 +237,14 @@
         const today = new Date();
         start.setHours(0,0,0,0); end.setHours(0,0,0,0); today.setHours(0,0,0,0);
 
-        const inWindow = (today >= start && today <= end);
+        const inWindow = today >= start && today <= end;
 
-        if (inWindow) {
+        if (inWindow){
           msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
-          btnWrap.style.display = "block";
+          btnWrap.style.display = "inline-block";
           openBtn.onclick = () => {
             const win = window.open(`${API_BASE}/open/${encodeURIComponent(bookingId)}`, "_blank");
-            setTimeout(() => { try { if (win) win.close(); } catch(_){} }, 1000);
+            setTimeout(() => { try{ if(win) win.close(); }catch(_){} }, 1000);
           };
         } else {
           const s = fmtDateByLang(start, lang);
@@ -192,21 +252,20 @@
           msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
         }
 
-        document.getElementById("langSelect").addEventListener("change", (ev) => {
+        document.getElementById("langSelect").addEventListener("change", (ev)=>{
           lang = ev.target.value;
           localStorage.setItem("neaspace_lang", lang);
           setLangUI(lang);
 
-          if (inWindow) {
-            msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
-          } else {
+          if (inWindow) msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
+          else {
             const s = fmtDateByLang(start, lang);
             const e = fmtDateByLang(end, lang);
             msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
           }
         });
 
-      } catch (e) {
+      } catch(e){
         console.error(e);
         msgBox.innerHTML = `<h2>${M[lang].error}</h2>`;
       }
