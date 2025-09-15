@@ -1,72 +1,93 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Apri Porta - NEASPACE</title>
+  <script>
+    async function init() {
+      const bookingId = new URLSearchParams(window.location.search).get('b');
+      const msgBox = document.getElementById("message");
+
+      if (!bookingId) {
+        msgBox.innerHTML = "<h2>❌ Booking ID mancante</h2>";
+        return;
+      }
+
+      msgBox.innerHTML = "<h2>⏳ Controllo prenotazione...</h2>";
+
+      try {
+        // chiamata al tuo server su Render
+        const res = await fetch(`https://one9rueneuve.onrender.com/booking/${bookingId}`);
+        if (!res.ok) throw new Error("Errore dal server");
+
+        const data = await res.json();
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        const start = new Date(data.start);
+        const end = new Date(data.end);
+        start.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+
+        if (today >= start && today <= end) {
+          // dentro le date → apri porta (manda ping su Telegram)
+          msgBox.innerHTML = `<h2>🌞 La porta è aperta! Sali al secondo piano, porta destra, codice 0204.<br>Mandaci un messaggino per confermare che siete a casa!</h2>`;
+          await fetch(`https://one9rueneuve.onrender.com/open/${bookingId}`);
+        } else {
+          // fuori dalle date
+          msgBox.innerHTML = `<h2>🚫 La porta si apre solo tra ${start.toLocaleDateString()} e ${end.toLocaleDateString()}.</h2>`;
+        }
+      } catch (err) {
+        console.error(err);
+        msgBox.innerHTML = "<h2>⚠️ Errore nel caricamento dati</h2>";
+      }
+    }
+
+    window.onload = init;
+  </script>
   <style>
-    .button-container { text-align:center; margin-top:50px; }
-    .slider-btn { font-size:22px; padding:20px 40px; border-radius:12px; background:#0088cc; color:#fff; border:none; cursor:pointer; }
-    .nea-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:9999}
-    .nea-modal .box{background:#fff;border-radius:14px;padding:22px 24px;max-width:520px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-family:inherit;text-align:center}
-    .nea-modal .box h3{margin:0 0 10px;font-size:22px}
-    .nea-modal .box p{margin:0 0 16px;font-size:16px;line-height:1.5}
-    .nea-modal .box button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;background:#111;color:#fff}
+    body {
+      background-color: #EAF6FF;
+      color: #1a1a1a;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      font-size: 28px;
+    }
+    .header {
+      background: white;
+      padding: 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header img {
+      max-height: 80px;
+      margin-right: 20px;
+    }
+    .header span {
+      font-size: 48px;
+      font-weight: bold;
+      color: #111;
+    }
+    .content {
+      padding: 80px 25px;
+    }
+    h2 {
+      font-size: 42px;
+      margin: 30px;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
-  <div class="button-container">
-    <button class="slider-btn" onclick="openDoor()" style="text-align:center;">
-      &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Click to Open
-    </button>
+  <div class="header">
+    <img src="https://login.smoobu.com/upload/images/website/logo/6/4/6/6/e/2/a/6/website_logo_530938_abf503416885c3141843d801c3717c2063e4bda6b56bf5268b3e1b264a7d8eae.jpg" alt="Logo NeaSpace">
+    <span>NeaSpace</span>
   </div>
-
-  <div id="neaModal" class="nea-modal" role="dialog" aria-modal="true">
-    <div class="box">
-      <h3>Accesso non disponibile</h3>
-      <p id="neaMsg">🚪 La porta si apre solo nelle date del tuo booking.</p>
-      <button onclick="document.getElementById('neaModal').style.display='none'">Ok</button>
-    </div>
+  <div class="content" id="message">
+    <h2>⏳ Controllo prenotazione in corso...</h2>
   </div>
-
-  <script>
-  const API_BASE = "https://one9rueneuve.onrender.com"; // ← tuo backend Render
-
-  const sameDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
-  const fmt = d => d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
-
-  async function openDoor() {
-    try {
-      const bookingId = new URL(location.href).searchParams.get('b')?.replace(/\D/g,'');
-      if (!bookingId) { alert('❌ Booking ID mancante (?b=...)'); return; }
-
-      // 1) prendo le date dal backend (proxy Smoobu)
-      const r = await fetch(`${API_BASE}/checkBooking?b=${bookingId}`);
-      const j = await r.json();
-      if (!j.ok) throw new Error(j.error || 'Errore checkBooking');
-
-      const [ay,am,ad] = j.arrival.split('-').map(Number);
-      const [dy,dm,dd] = j.departure.split('-').map(Number);
-      const arrival = new Date(ay,am-1,ad);
-      const departure = new Date(dy,dm-1,dd);
-
-      const today = sameDay(new Date());
-      const allowed = today >= sameDay(arrival) && today <= sameDay(departure);
-
-      if (allowed) {
-        // 2) invio messaggio lato server (token Telegram nascosto)
-        const text = "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta. Sali al secondo piano, porta destra, e recupera le chiavi dalla keybox (codice 0204). Mandaci un messaggio quando arrivi!";
-        const win = window.open(`${API_BASE}/notify?text=${encodeURIComponent(text)}`, "_blank");
-        setTimeout(()=>{ try{ if(win) win.close(); }catch(_){} }, 1000);
-      } else {
-        document.getElementById('neaMsg').textContent =
-          `🚪 La porta si apre solo tra ${fmt(arrival)} e ${fmt(departure)}.`;
-        document.getElementById('neaModal').style.display = 'flex';
-      }
-    } catch (e) {
-      console.error(e);
-      alert('⚠️ Errore: ' + e.message);
-    }
-  }
-  </script>
 </body>
 </html>
