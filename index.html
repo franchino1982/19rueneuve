@@ -5,13 +5,16 @@
   <title>Apri Porta - NEASPACE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      margin: 0; background: #EAF6FF; color: #111; text-align: center;
+    :root { --bg:#EAF6FF; --fg:#111; }
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      text-align:center;
     }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 64px 18px; }
-    h2 { font-size: 28px; line-height: 1.5; margin: 0; }
-    .muted { color:#666; font-size:14px; margin-top:12px }
+    .wrap{max-width:900px;margin:0 auto;padding:64px 18px}
+    h2{font-size:28px;line-height:1.5;margin:0}
+    .muted{color:#666;font-size:14px;margin-top:12px}
   </style>
 </head>
 <body>
@@ -23,66 +26,100 @@
   <script>
     const API_BASE = "https://one9rueneuve.onrender.com";
 
-    const fmt = d => d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
-    const sameDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+    // --- utils date ---
 
-    function getBookingIdFromQuery() {
-      const b = new URL(location.href).searchParams.get('b');
-      return b ? b.replace(/\D/g,'') : null;
+    // accetta "YYYY-MM-DD" o "YYYY-MM-DDTHH:mm:ssZ"
+    function splitIso(iso){
+      if (!iso) return ["","",""];
+      const clean = String(iso).split("T")[0]; // taglia eventuale parte oraria
+      const parts = clean.split("-");
+      return [parts[0]||"", parts[1]||"", parts[2]||""];
     }
 
-    async function getBookingDates(id) {
-      const r = await fetch(`${API_BASE}/booking/${encodeURIComponent(id)}`, { cache:"no-store" });
-      if (!r.ok) throw new Error(`Server ${r.status}`);
+    // formattazione stabile DD/MM/YYYY (niente locale -> iPhone ok)
+    function fmtISO(iso){
+      const [y,m,d] = splitIso(iso);
+      return ${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y};
+    }
+
+    // Date locale (niente UTC) per i confronti
+    function dateFromISO(iso){
+      const [y,m,d] = splitIso(iso).map(Number);
+      const dt = new Date(y, (m||1)-1, d||1);
+      dt.setHours(0,0,0,0);
+      return dt;
+    }
+
+    function sameDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+
+    // --- helpers ---
+
+    function getBookingIdFromQuery(){
+      const b = new URL(location.href).searchParams.get("b");
+      return b ? b.replace(/\D/g,"") : null;
+    }
+
+    async function getBookingDates(id){
+      const r = await fetch(${API_BASE}/booking/${encodeURIComponent(id)}, { cache:"no-store" });
+      if (!r.ok) throw new Error(Server ${r.status});
       const j = await r.json();
       if (!j.ok || !j.start || !j.end) throw new Error(j.error || "Dati prenotazione non validi");
-      return { arrival: new Date(j.start), departure: new Date(j.end) };
+      return {
+        arrivalISO: j.start,
+        departureISO: j.end,
+        arrival: dateFromISO(j.start),
+        departure: dateFromISO(j.end)
+      };
     }
 
-    async function init() {
-      const msg = document.getElementById('msg');
-      const sub = document.getElementById('sub');
+    // --- main ---
+
+    async function init(){
+      const msg = document.getElementById("msg");
+      const sub = document.getElementById("sub");
 
       const bookingId = getBookingIdFromQuery();
-      if (!bookingId) {
+      if (!bookingId){
         msg.textContent = "❌ Booking ID mancante (?b=...)";
         return;
       }
 
-      try {
-        // 1) Leggo le date dal backend
-        const { arrival, departure } = await getBookingDates(bookingId);
+      try{
+        // 1) leggo le date dal backend
+        const { arrivalISO, departureISO, arrival, departure } = await getBookingDates(bookingId);
+
         const today = sameDay(new Date());
         const allowed = today >= sameDay(arrival) && today <= sameDay(departure);
 
-        if (!allowed) {
-          msg.textContent = `🚪 La porta si apre solo tra ${fmt(arrival)} e ${fmt(departure)}.`;
+        if (!allowed){
+          msg.textContent = 🚪 La porta si apre solo tra ${fmtISO(arrivalISO)} e ${fmtISO(departureISO)}.;
           sub.textContent = "Se hai bisogno di assistenza contattaci pure.";
           return;
         }
 
-        // 2) Dentro la finestra: invio telegram via backend (niente popup)
+        // 2) dentro la finestra: invia telegram via backend
         msg.textContent = "🔓 Apertura in corso...";
         sub.textContent = "Un attimo mentre inviamo la richiesta.";
 
-        const resp = await fetch(`${API_BASE}/open/${encodeURIComponent(bookingId)}`, {
+        const resp = await fetch(${API_BASE}/open/${encodeURIComponent(bookingId)}, {
           method: "GET",
           cache: "no-store"
         });
-        const tg = await resp.json().catch(() => ({}));
+        const tg = await resp.json().catch(()=> ({}));
 
-        if (resp.ok && tg && tg.ok) {
+        if (resp.ok && tg && tg.ok){
           msg.innerHTML = "🌞 La porta è aperta! Sali al secondo piano, porta destra, codice 0204.";
           sub.textContent = "Mandaci un messaggino per confermare che siete a casa!";
         } else {
-          const reason = (tg && (tg.description || tg.error)) || `HTTP ${resp.status}`;
-          msg.textContent = "⚠️ Invio Telegram fallito.";
-          sub.textContent = `Dettagli: ${reason}`;
+          const reason = (tg && (tg.description || tg.error)) || HTTP ${resp.status};
+          msg.textContent = "⚠ Invio Telegram fallito.";
+          sub.textContent = Dettagli: ${reason};
         }
-      } catch (e) {
-        msg.textContent = "⚠️ Errore durante il controllo prenotazione.";
-        sub.textContent = e.message || "Imprevisto.";
+
+      } catch(e){
         console.error(e);
+        msg.textContent = "⚠ Errore durante il controllo prenotazione.";
+        sub.textContent = e.message || "Imprevisto.";
       }
     }
 
