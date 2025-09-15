@@ -123,8 +123,8 @@
         loading: "⏳ Controllo prenotazione in corso...",
         missing: "❌ Booking ID mancante",
         opened: "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta. Sali al secondo piano, porta destra, e recupera le chiavi dalla keybox con il codice 0204. Mandaci un messaggino per confermare che siete a casa!",
-        outside: (s,e) => `🚫 La porta si apre solo tra ${s} e ${e}.`,
-        error: "⚠️ Errore nel caricamento dati",
+        outside: (s,e) => 🚫 La porta si apre solo tra ${s} e ${e}.,
+        error: "⚠ Errore nel caricamento dati",
         openBtn: "Apri adesso",
         photoCaption: "Salite al secondo piano, porta destra, e aprite la cassetta con le chiavi sulla porta con il codice 0204.",
         videoCaption: "Video: come aprire e chiudere la porta di casa.",
@@ -134,8 +134,8 @@
         loading: "⏳ Checking your booking...",
         missing: "❌ Missing booking ID",
         opened: "🌞 Your NeaSpace adventure starts now: the door is open. Go to the second floor, right door, and collect the keys from the keybox using code 0204. Please message us to confirm you've arrived!",
-        outside: (s,e) => `🚫 The door opens only between ${s} and ${e}.`,
-        error: "⚠️ Error loading data",
+        outside: (s,e) => 🚫 The door opens only between ${s} and ${e}.,
+        error: "⚠ Error loading data",
         openBtn: "Open now",
         photoCaption: "Go up to the second floor, right door, and open the keybox on the door with code 0204.",
         videoCaption: "Video: how to open and close the home door.",
@@ -145,8 +145,8 @@
         loading: "⏳ Vérification de votre réservation...",
         missing: "❌ ID de réservation manquant",
         opened: "🌞 Votre aventure NeaSpace commence maintenant : la porte est ouverte. Montez au deuxième étage, porte à droite, et récupérez les clés dans la boîte à clés avec le code 0204. Merci de nous envoyer un message pour confirmer votre arrivée !",
-        outside: (s,e) => `🚫 La porte s'ouvre uniquement entre le ${s} et le ${e}.`,
-        error: "⚠️ Erreur lors du chargement des données",
+        outside: (s,e) => 🚫 La porte s'ouvre uniquement entre le ${s} et le ${e}.,
+        error: "⚠ Erreur lors du chargement des données",
         openBtn: "Ouvrir maintenant",
         photoCaption: "Montez au deuxième étage, porte à droite, et ouvrez la boîte à clés sur la porte avec le code 0204.",
         videoCaption: "Vidéo : comment ouvrir et fermer la porte d'entrée.",
@@ -156,8 +156,8 @@
         loading: "⏳ Verificando su reserva...",
         missing: "❌ Falta el ID de la reserva",
         opened: "🌞 Tu aventura en NeaSpace comienza ahora: la puerta está abierta. Sube al segundo piso, puerta a la derecha, y recoge las llaves de la caja con el código 0204. ¡Envíanos un mensaje para confirmar que has llegado!",
-        outside: (s,e) => `🚫 La puerta solo se abre entre ${s} y ${e}.`,
-        error: "⚠️ Error al cargar los datos",
+        outside: (s,e) => 🚫 La puerta solo se abre entre ${s} y ${e}.,
+        error: "⚠ Error al cargar los datos",
         openBtn: "Abrir ahora",
         photoCaption: "Sube al segundo piso, puerta derecha, y abre la caja de llaves en la puerta con el código 0204.",
         videoCaption: "Vídeo: cómo abrir y cerrar la puerta de la casa.",
@@ -215,15 +215,15 @@
 
       const bookingId = new URLSearchParams(location.search).get('b');
       if (!bookingId){
-        msgBox.innerHTML = `<h2>${M[lang].missing}</h2>`;
+        msgBox.innerHTML = <h2>${M[lang].missing}</h2>;
         return;
       }
 
-      msgBox.innerHTML = `<h2>${M[lang].loading}</h2>`;
+      msgBox.innerHTML = <h2>${M[lang].loading}</h2>;
       btnWrap.style.display = "none";
 
       try{
-        const res = await fetch(`${API_BASE}/booking/${encodeURIComponent(bookingId)}`, { cache:'no-store' });
+        const res = await fetch(${API_BASE}/booking/${encodeURIComponent(bookingId)}, { cache:'no-store' });
         if (!res.ok) throw new Error("server");
         const data = await res.json();
         if (!data.ok || !data.start || !data.end) throw new Error(data.error || "bad-data");
@@ -234,37 +234,44 @@
         start.setHours(0,0,0,0); end.setHours(0,0,0,0); today.setHours(0,0,0,0);
 
         const inWindow = today >= start && today <= end;
-if (inWindow){
-  msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
-  btnWrap.style.display = "inline-block";
-  openBtn.onclick = async () => {
-    try {
-      const resp = await fetch(`${API_BASE}/open/${encodeURIComponent(bookingId)}`, {
-        method: "GET",
-        cache: "no-store"
-      });
-      const tg = await resp.json();
-      if (!(resp.ok && tg.ok)) {
-        alert("⚠️ Telegram non inviato: " + (tg.description || tg.error || `HTTP ${resp.status}`));
-      } else {
-        // opzionale feedback
-        console.log("✅ Messaggio Telegram inviato");
-      }
-    } catch (e) {
-      alert("⚠️ Errore: " + e.message);
-    }
-  };
-}
 
-     
-        else {
+        if (inWindow) {
+          msgBox.innerHTML = <h2>${M[lang].opened}</h2>;
+          btnWrap.style.display = "inline-block";
+          openBtn.onclick = async () => {
+            // UI lock (facoltativo)
+            const prev = openBtn.textContent;
+            openBtn.disabled = true;
+            openBtn.style.opacity = "0.7";
+            openBtn.textContent = M[lang].openBtn + "…";
+            try {
+              const resp = await fetch(${API_BASE}/open/${encodeURIComponent(bookingId)}, {
+                method: "GET",
+                cache: "no-store"
+              });
+              const tg = await resp.json();
+              if (!(resp.ok && tg && tg.ok)) {
+                const reason = (tg && (tg.description || tg.error)) || HTTP ${resp.status};
+                alert("⚠ " + (M[lang].error || "Error") + ": " + reason);
+              } else {
+                console.log("✅ Messaggio Telegram inviato");
+              }
+            } catch (e) {
+              alert("⚠ " + (M[lang].error || "Error") + ": " + e.message);
+            } finally {
+              openBtn.disabled = false;
+              openBtn.style.opacity = "1";
+              openBtn.textContent = prev;
+            }
+          };
+        } else {
           const s = fmtDateByLang(start, lang);
           const e = fmtDateByLang(end, lang);
-          msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
+          msgBox.innerHTML = <h2>${M[lang].outside(s,e)}</h2>;
         }
       } catch(e){
         console.error(e);
-        msgBox.innerHTML = `<h2>${M[lang].error}</h2>`;
+        msgBox.innerHTML = <h2>${M[lang].error}</h2>;
       }
     }
 
