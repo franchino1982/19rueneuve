@@ -3,91 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <title>Apri Porta - NEASPACE</title>
-  <script>
-    async function init() {
-      const bookingId = new URLSearchParams(window.location.search).get('b');
-      const msgBox = document.getElementById("message");
-
-      if (!bookingId) {
-        msgBox.innerHTML = "<h2>❌ Booking ID mancante</h2>";
-        return;
-      }
-
-      msgBox.innerHTML = "<h2>⏳ Controllo prenotazione...</h2>";
-
-      try {
-        // chiamata al tuo server su Render
-        const res = await fetch(`https://one9rueneuve.onrender.com/booking/${bookingId}`);
-        if (!res.ok) throw new Error("Errore dal server");
-
-        const data = await res.json();
-        const today = new Date();
-        today.setHours(0,0,0,0);
-
-        const start = new Date(data.start);
-        const end = new Date(data.end);
-        start.setHours(0,0,0,0);
-        end.setHours(0,0,0,0);
-
-        if (today >= start && today <= end) {
-          // dentro le date → apri porta (manda ping su Telegram)
-          msgBox.innerHTML = `<h2>🌞 La porta è aperta! Sali al secondo piano, porta destra, codice 0204.<br>Mandaci un messaggino per confermare che siete a casa!</h2>`;
-          await fetch(`https://one9rueneuve.onrender.com/open/${bookingId}`);
-        } else {
-          // fuori dalle date
-          msgBox.innerHTML = `<h2>🚫 La porta si apre solo tra ${start.toLocaleDateString()} e ${end.toLocaleDateString()}.</h2>`;
-        }
-      } catch (err) {
-        console.error(err);
-        msgBox.innerHTML = "<h2>⚠️ Errore nel caricamento dati</h2>";
-      }
-    }
-
-    window.onload = init;
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      background-color: #EAF6FF;
-      color: #1a1a1a;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      text-align: center;
-      font-size: 28px;
-    }
-    .header {
-      background: white;
-      padding: 20px 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .header img {
-      max-height: 80px;
-      margin-right: 20px;
-    }
-    .header span {
-      font-size: 48px;
-      font-weight: bold;
-      color: #111;
-    }
-    .content {
-      padding: 80px 25px;
-    }
-    h2 {
-      font-size: 42px;
-      margin: 30px;
-      line-height: 1.6;
-    }
+    body { background-color:#EAF6FF; color:#1a1a1a; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; padding:0; text-align:center; font-size:18px; }
+    .header { background:#fff; padding:16px 10px; display:flex; align-items:center; justify-content:center; gap:16px; position:relative; }
+    .header img { max-height:56px; }
+    .brand { font-size:28px; font-weight:700; color:#111; }
+    .lang { position:absolute; right:12px; top:12px; }
+    .lang select { padding:6px 10px; border-radius:10px; border:1px solid #ddd; font-size:14px; }
+
+    .content { padding:48px 22px; }
+    h2 { font-size:28px; margin:20px auto; line-height:1.6; max-width:900px; }
+    .button-container { margin-top:28px; }
+    .slider-btn { font-size:18px; padding:14px 28px; border-radius:12px; background:#0088cc; color:#fff; border:none; cursor:pointer; }
+
+    /* Sezione guida */
+    .guide { padding: 10px 22px 60px; max-width: 1100px; margin: 0 auto; }
+    .guide-grid { display:grid; grid-template-columns:1fr; gap:18px; }
+    @media (min-width: 860px) { .guide-grid { grid-template-columns:1fr 1fr; } }
+    .card { background:#fff; border-radius:14px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.08); text-align:center; }
+    .guide-img { width:100%; height:auto; border-radius:10px; display:block; }
+    .caption { margin:10px 0 0; font-size:16px; }
+    .video-wrap { position:relative; width:100%; padding-bottom:56.25%; border-radius:10px; overflow:hidden; }
+    .video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
   </style>
 </head>
 <body>
   <div class="header">
     <img src="https://login.smoobu.com/upload/images/website/logo/6/4/6/6/e/2/a/6/website_logo_530938_abf503416885c3141843d801c3717c2063e4bda6b56bf5268b3e1b264a7d8eae.jpg" alt="Logo NeaSpace">
-    <span>NeaSpace</span>
+    <span class="brand">NeaSpace</span>
+    <div class="lang">
+      <select id="langSelect" aria-label="Select language">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
   </div>
+
   <div class="content" id="message">
     <h2>⏳ Controllo prenotazione in corso...</h2>
+    <div class="button-container" style="display:none">
+      <button class="slider-btn" id="openBtn">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Click to Open</button>
+    </div>
   </div>
+
+  <!-- Sezione guida: immagine + video affiancati -->
+  <section class="guide">
+    <div class="guide-grid">
+      <!-- Colonna immagine -->
+      <div class="card">
+        <img class="guide-img" src="https://franchino1982.github.io/19rueneuve/porta.jpg" alt="Porta di casa - NeaSpace">
+        <p class="caption" id="photoCaption">
+          <!-- testo localizzato via JS -->
+        </p>
+      </div>
+      <!-- Colonna video -->
+      <div class="card">
+        <div class="video-wrap">
+          <iframe
+            src="https://www.youtube.com/embed/wyDdD1UKy4A"
+            title="Come aprire e chiudere la porta di casa"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption" id="videoCaption">
+          <!-- testo localizzato via JS -->
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const API_BASE = "https://one9rueneuve.onrender.com";
+
+    // ====== i18n ======
+    const M = {
+      it: {
+        loading: "⏳ Controllo prenotazione in corso...",
+        missing: "❌ Booking ID mancante",
+        opened: "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta. Sali al secondo piano, porta destra, e recupera le chiavi dalla keybox con il codice 0204. Mandaci un messaggino per confermare che siete a casa!",
+        outside: (s,e) => `🚫 La porta si apre solo tra ${s} e ${e}.`,
+        error: "⚠️ Errore nel caricamento dati",
+        openBtn: "Click to Open",
+        photoCaption: "Salite al secondo piano, porta destra, e aprite la porta con il codice 0204.",
+        videoCaption: "Video: come aprire e chiudere la porta di casa."
+      },
+      en: {
+        loading: "⏳ Checking your booking...",
+        missing: "❌ Missing booking ID",
+        opened: "🌞 Your NeaSpace adventure starts now: the door is open. Go to the second floor, right door, and collect the keys from the keybox using code 0204. Please message us to confirm you've arrived!",
+        outside: (s,e) => `🚫 The door opens only between ${s} and ${e}.`,
+        error: "⚠️ Error loading data",
+        openBtn: "Click to Open",
+        photoCaption: "Go up to the second floor, right door, and open the door with code 0204.",
+        videoCaption: "Video: how to open and close the home door."
+      },
+      fr: {
+        loading: "⏳ Vérification de votre réservation...",
+        missing: "❌ ID de réservation manquant",
+        opened: "🌞 Votre aventure NeaSpace commence maintenant : la porte est ouverte. Montez au deuxième étage, porte à droite, et récupérez les clés dans la boîte à clés avec le code 0204. Merci de nous envoyer un message pour confirmer votre arrivée !",
+        outside: (s,e) => `🚫 La porte s'ouvre uniquement entre le ${s} et le ${e}.`,
+        error: "⚠️ Erreur lors du chargement des données",
+        openBtn: "Cliquez pour ouvrir",
+        photoCaption: "Montez au deuxième étage, porte à droite, et ouvrez la porte avec le code 0204.",
+        videoCaption: "Vidéo : comment ouvrir et fermer la porte d'entrée."
+      },
+      es: {
+        loading: "⏳ Verificando su reserva...",
+        missing: "❌ Falta el ID de la reserva",
+        opened: "🌞 Tu aventura en NeaSpace comienza ahora: la puerta está abierta. Sube al segundo piso, puerta a la derecha, y recoge las llaves de la caja con el código 0204. ¡Envíanos un mensaje para confirmar que has llegado!",
+        outside: (s,e) => `🚫 La puerta solo se abre entre ${s} y ${e}.`,
+        error: "⚠️ Error al cargar los datos",
+        openBtn: "Click para abrir",
+        photoCaption: "Sube al segundo piso, puerta derecha, y abre la puerta con el código 0204.",
+        videoCaption: "Vídeo: cómo abrir y cerrar la puerta de la casa."
+      }
+    };
+
+    function detectLang() {
+      const saved = localStorage.getItem("neaspace_lang");
+      if (saved && M[saved]) return saved;
+      const nav = (navigator.language || navigator.userLanguage || "en").slice(0,2).toLowerCase();
+      if (M[nav]) return nav;
+      return "en";
+    }
+
+    function setLangUI(lang) {
+      document.documentElement.lang = lang;
+      const sel = document.getElementById("langSelect");
+      sel.value = lang;
+      document.getElementById("openBtn").textContent = M[lang].openBtn;
+      document.getElementById("photoCaption").textContent = M[lang].photoCaption;
+      document.getElementById("videoCaption").textContent = M[lang].videoCaption;
+    }
+
+    function fmtDateByLang(d, lang) {
+      try {
+        return d.toLocaleDateString(lang === 'en' ? 'en-GB' : lang, { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch {
+        return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+    }
+
+    async function init() {
+      let lang = detectLang();
+      setLangUI(lang);
+
+      const msgBox = document.getElementById("message");
+      const openBtn = document.getElementById("openBtn");
+      const btnWrap = openBtn.parentElement;
+
+      const bookingId = new URLSearchParams(window.location.search).get('b');
+      if (!bookingId) {
+        msgBox.innerHTML = `<h2>${M[lang].missing}</h2>`;
+        return;
+      }
+
+      msgBox.innerHTML = `<h2>${M[lang].loading}</h2>`;
+      btnWrap.style.display = "none";
+
+      try {
+        const res = await fetch(`${API_BASE}/booking/${encodeURIComponent(bookingId)}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error("server");
+        const data = await res.json();
+        if (!data.ok || !data.start || !data.end) throw new Error(data.error || "bad-data");
+
+        const start = new Date(data.start);
+        const end   = new Date(data.end);
+        const today = new Date();
+        start.setHours(0,0,0,0); end.setHours(0,0,0,0); today.setHours(0,0,0,0);
+
+        const inWindow = (today >= start && today <= end);
+
+        if (inWindow) {
+          msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
+          btnWrap.style.display = "block";
+          openBtn.onclick = () => {
+            const win = window.open(`${API_BASE}/open/${encodeURIComponent(bookingId)}`, "_blank");
+            setTimeout(() => { try { if (win) win.close(); } catch(_){} }, 1000);
+          };
+        } else {
+          const s = fmtDateByLang(start, lang);
+          const e = fmtDateByLang(end, lang);
+          msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
+        }
+
+        document.getElementById("langSelect").addEventListener("change", (ev) => {
+          lang = ev.target.value;
+          localStorage.setItem("neaspace_lang", lang);
+          setLangUI(lang);
+
+          if (inWindow) {
+            msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
+          } else {
+            const s = fmtDateByLang(start, lang);
+            const e = fmtDateByLang(end, lang);
+            msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
+          }
+        });
+
+      } catch (e) {
+        console.error(e);
+        msgBox.innerHTML = `<h2>${M[lang].error}</h2>`;
+      }
+    }
+
+    window.onload = init;
+  </script>
 </body>
 </html>
