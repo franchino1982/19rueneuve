@@ -25,8 +25,6 @@
     }
     .header img{height:40px}
     .brand{font-weight:700; font-size:20px}
-    .lang{position:absolute; right:12px; inset-inline-end: max(12px, env(safe-area-inset-right));}
-    .lang select{padding:6px 10px; border-radius:10px; border:1px solid #ddd; font-size:14px; background:#fff}
 
     /* Content */
     .content{padding:28px 16px 12px}
@@ -45,7 +43,20 @@
     @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
 
     .card{background:var(--card); border-radius:var(--radius); padding:12px; box-shadow:var(--shadow); text-align:center}
-    .guide-img{width:50%; height:auto; border-radius:10px; display:block}
+
+    /* FOTO PORTA: centrata e responsiva */
+    .guide-img{
+      width:50%;         /* metà card su desktop */
+      max-width:280px;   /* limite opzionale per non esagerare */
+      height:auto;
+      border-radius:10px;
+      display:block;
+      margin:0 auto;     /* centrata */
+    }
+    @media (max-width: 600px){
+      .guide-img{ width:80%; }  /* più grande su mobile */
+    }
+
     .caption{margin:8px 0 2px; font-size:14px; color:var(--muted)}
     .video{position:relative; width:100%; padding-bottom:56.25%; border-radius:10px; overflow:hidden}
     .video iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
@@ -65,20 +76,12 @@
   <div class="header">
     <img src="https://login.smoobu.com/upload/images/website/logo/6/4/6/6/e/2/a/6/website_logo_530938_abf503416885c3141843d801c3717c2063e4bda6b56bf5268b3e1b264a7d8eae.jpg" alt="Logo NeaSpace" />
     <span class="brand">NeaSpace</span>
-    <div class="lang">
-      <select id="langSelect" aria-label="Select language">
-        <option value="it">Italiano</option>
-        <option value="en">English</option>
-        <option value="fr">Français</option>
-        <option value="es">Español</option>
-      </select>
-    </div>
   </div>
 
   <div class="content" id="message">
     <h2>⏳ Controllo prenotazione in corso...</h2>
     <div class="button-container" style="display:none">
-      <button class="btn" id="openBtn">&nbsp;&nbsp;&nbsp;Click to Open&nbsp;&nbsp;&nbsp;</button>
+      <button class="btn" id="openBtn">&nbsp;&nbsp;&nbsp;Open now&nbsp;&nbsp;&nbsp;</button>
     </div>
   </div>
 
@@ -114,7 +117,7 @@
   <script>
     const API_BASE = "https://one9rueneuve.onrender.com";
 
-    // ====== i18n ======
+    // ====== i18n (solo automatico, senza selettore) ======
     const M = {
       it: {
         loading: "⏳ Controllo prenotazione in corso...",
@@ -123,7 +126,7 @@
         outside: (s,e) => `🚫 La porta si apre solo tra ${s} e ${e}.`,
         error: "⚠️ Errore nel caricamento dati",
         openBtn: "Apri adesso",
-        photoCaption: "Salite al secondo piano, porta destra, e aprite la porta con il codice 0204.",
+        photoCaption: "Salite al secondo piano, porta destra, e aprite la cassetta con le chiavi sulla porta con il codice 0204.",
         videoCaption: "Video: come aprire e chiudere la porta di casa.",
         back: "Torna alla guida ospiti"
       },
@@ -134,7 +137,7 @@
         outside: (s,e) => `🚫 The door opens only between ${s} and ${e}.`,
         error: "⚠️ Error loading data",
         openBtn: "Open now",
-        photoCaption: "Go up to the second floor, right door, and open the door with code 0204.",
+        photoCaption: "Go up to the second floor, right door, and open the keybox on the door with code 0204.",
         videoCaption: "Video: how to open and close the home door.",
         back: "Back to Guest Guide"
       },
@@ -145,7 +148,7 @@
         outside: (s,e) => `🚫 La porte s'ouvre uniquement entre le ${s} et le ${e}.`,
         error: "⚠️ Erreur lors du chargement des données",
         openBtn: "Ouvrir maintenant",
-        photoCaption: "Montez au deuxième étage, porte à droite, et ouvrez la porte avec le code 0204.",
+        photoCaption: "Montez au deuxième étage, porte à droite, et ouvrez la boîte à clés sur la porte avec le code 0204.",
         videoCaption: "Vidéo : comment ouvrir et fermer la porte d'entrée.",
         back: "Retour au guide des invités"
       },
@@ -156,24 +159,19 @@
         outside: (s,e) => `🚫 La puerta solo se abre entre ${s} y ${e}.`,
         error: "⚠️ Error al cargar los datos",
         openBtn: "Abrir ahora",
-        photoCaption: "Sube al segundo piso, puerta derecha, y abre la puerta con el código 0204.",
+        photoCaption: "Sube al segundo piso, puerta derecha, y abre la caja de llaves en la puerta con el código 0204.",
         videoCaption: "Vídeo: cómo abrir y cerrar la puerta de la casa.",
         back: "Volver a la guía para huéspedes"
       }
     };
 
-    // lingua iniziale
     function detectLang(){
-      const saved = localStorage.getItem("neaspace_lang");
-      if (saved && M[saved]) return saved;
       const nav = (navigator.language || "en").slice(0,2).toLowerCase();
       return M[nav] ? nav : "en";
     }
 
     function setLangUI(lang){
       document.documentElement.lang = lang;
-      const sel = document.getElementById("langSelect");
-      sel.value = lang;
       document.getElementById("openBtn").textContent = M[lang].openBtn;
       document.getElementById("photoCaption").textContent = M[lang].photoCaption;
       document.getElementById("videoCaption").textContent = M[lang].videoCaption;
@@ -192,12 +190,10 @@
     function wireBackLink(){
       const a = document.getElementById("backLink");
       const ref = document.referrer || "";
-      // se arrivo dalla Guest App di Smoobu, torna lì
       if (ref.includes("guest.smoobu.com")) {
         a.href = ref;
         a.onclick = null;
       } else {
-        // altrimenti prova history.back(), poi fallback alla home Guest App
         a.href = "https://guest.smoobu.com/";
         a.onclick = (e) => {
           e.preventDefault();
@@ -210,7 +206,7 @@
     async function init(){
       wireBackLink();
 
-      let lang = detectLang();
+      const lang = detectLang();
       setLangUI(lang);
 
       const msgBox = document.getElementById("message");
@@ -251,20 +247,6 @@
           const e = fmtDateByLang(end, lang);
           msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
         }
-
-        document.getElementById("langSelect").addEventListener("change", (ev)=>{
-          lang = ev.target.value;
-          localStorage.setItem("neaspace_lang", lang);
-          setLangUI(lang);
-
-          if (inWindow) msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
-          else {
-            const s = fmtDateByLang(start, lang);
-            const e = fmtDateByLang(end, lang);
-            msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
-          }
-        });
-
       } catch(e){
         console.error(e);
         msgBox.innerHTML = `<h2>${M[lang].error}</h2>`;
