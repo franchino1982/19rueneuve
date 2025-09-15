@@ -234,15 +234,30 @@
         start.setHours(0,0,0,0); end.setHours(0,0,0,0); today.setHours(0,0,0,0);
 
         const inWindow = today >= start && today <= end;
+if (inWindow){
+  msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
+  btnWrap.style.display = "inline-block";
+  openBtn.onclick = async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/open/${encodeURIComponent(bookingId)}`, {
+        method: "GET",
+        cache: "no-store"
+      });
+      const tg = await resp.json();
+      if (!(resp.ok && tg.ok)) {
+        alert("⚠️ Telegram non inviato: " + (tg.description || tg.error || `HTTP ${resp.status}`));
+      } else {
+        // opzionale feedback
+        console.log("✅ Messaggio Telegram inviato");
+      }
+    } catch (e) {
+      alert("⚠️ Errore: " + e.message);
+    }
+  };
+}
 
-        if (inWindow){
-          msgBox.innerHTML = `<h2>${M[lang].opened}</h2>`;
-          btnWrap.style.display = "inline-block";
-          openBtn.onclick = () => {
-            const win = window.open(`${API_BASE}/open/${encodeURIComponent(bookingId)}`, "_blank");
-            setTimeout(() => { try{ if(win) win.close(); }catch(_){} }, 1000);
-          };
-        } else {
+     
+        else {
           const s = fmtDateByLang(start, lang);
           const e = fmtDateByLang(end, lang);
           msgBox.innerHTML = `<h2>${M[lang].outside(s,e)}</h2>`;
