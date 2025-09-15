@@ -4,126 +4,137 @@
   <meta charset="UTF-8" />
   <title>Apri Porta - NEASPACE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Anti-cache per GitHub Pages -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <style>
-    :root { --bg:#EAF6FF; --fg:#111; }
-    html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--fg);
-      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-      text-align:center;
-    }
-    .wrap{max-width:900px;margin:0 auto;padding:64px 18px}
-    h2{font-size:28px;line-height:1.5;margin:0}
-    .muted{color:#666;font-size:14px;margin-top:12px}
+    :root{--bg:#EAF6FF;--fg:#111}
+    body{margin:0;background:var(--bg);color:var(--fg);font:600 28px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;text-align:center}
+    .wrap{padding:60px 16px}
+    .sub{font-size:16px;font-weight:500;opacity:.7;margin-top:6px}
+    .err{color:#b00020;font-weight:700}
+    .ok{color:#0a6800;font-weight:700}
+    .muted{font-size:16px;opacity:.8;margin-top:14px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h2 id="msg">⏳ Controllo prenotazione...</h2>
-    <p id="sub" class="muted"></p>
+    <div id="msg">⏳ Controllo prenotazione.</div>
+    <div id="sub" class="sub"></div>
+    <div id="hint" class="muted"></div>
   </div>
 
   <script>
     const API_BASE = "https://one9rueneuve.onrender.com";
 
-    // --- utils date ---
-
-    // accetta "YYYY-MM-DD" o "YYYY-MM-DDTHH:mm:ssZ"
-    function splitIso(iso){
-      if (!iso) return ["","",""];
-      const clean = String(iso).split("T")[0]; // taglia eventuale parte oraria
-      const parts = clean.split("-");
-      return [parts[0]||"", parts[1]||"", parts[2]||""];
+    // Util: timeout su fetch
+    function fetchWithTimeout(resource, options = {}) {
+      const { timeout = 12000 } = options; // 12s
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      return fetch(resource, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(id));
     }
 
-    // formattazione stabile DD/MM/YYYY (niente locale -> iPhone ok)
+    // Date ISO -> "DD/MM/YYYY" (stabile su tutti i browser)
     function fmtISO(iso){
-      const [y,m,d] = splitIso(iso);
-      return ${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y};
+      const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`;
     }
-
-    // Date locale (niente UTC) per i confronti
-    function dateFromISO(iso){
-      const [y,m,d] = splitIso(iso).map(Number);
-      const dt = new Date(y, (m||1)-1, d||1);
-      dt.setHours(0,0,0,0);
-      return dt;
-    }
-
-    function sameDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
-
-    // --- helpers ---
-
-    function getBookingIdFromQuery(){
-      const b = new URL(location.href).searchParams.get("b");
-      return b ? b.replace(/\D/g,"") : null;
-    }
-
-    async function getBookingDates(id){
-      const r = await fetch(${API_BASE}/booking/${encodeURIComponent(id)}, { cache:"no-store" });
-      if (!r.ok) throw new Error(Server ${r.status});
-      const j = await r.json();
-      if (!j.ok || !j.start || !j.end) throw new Error(j.error || "Dati prenotazione non validi");
-      return {
-        arrivalISO: j.start,
-        departureISO: j.end,
-        arrival: dateFromISO(j.start),
-        departure: dateFromISO(j.end)
-      };
-    }
-
-    // --- main ---
 
     async function init(){
       const msg = document.getElementById("msg");
       const sub = document.getElementById("sub");
+      const hint = document.getElementById("hint");
 
-      const bookingId = getBookingIdFromQuery();
-      if (!bookingId){
-        msg.textContent = "❌ Booking ID mancante (?b=...)";
+      const bookingIdRaw = new URL(location.href).searchParams.get("b");
+      const bookingId = bookingIdRaw ? bookingIdRaw.replace(/\D/g,"") : "";
+      if (!bookingId) {
+        msg.textContent = "❌ Booking ID mancante.";
+        sub.textContent = "Aggiungi ?b=NUMERO all’URL.";
+        msg.className = "err";
         return;
       }
 
-      try{
-        // 1) leggo le date dal backend
-        const { arrivalISO, departureISO, arrival, departure } = await getBookingDates(bookingId);
+      msg.textContent = "⏳ Controllo prenotazione…";
+      sub.textContent = "";
+      hint.textContent = "";
 
-        const today = sameDay(new Date());
-        const allowed = today >= sameDay(arrival) && today <= sameDay(departure);
+      try {
+        // bust cache del backend
+        const url = `${API_BASE}/booking/${encodeURIComponent(bookingId)}?t=${Date.now()}`;
+        console.log("→ GET", url);
+        const r = await fetchWithTimeout(url, { cache: "no-store", mode: "cors", timeout: 12000 });
 
-        if (!allowed){
-          msg.textContent = 🚪 La porta si apre solo tra ${fmtISO(arrivalISO)} e ${fmtISO(departureISO)}.;
-          sub.textContent = "Se hai bisogno di assistenza contattaci pure.";
-          return;
+        // Se il server non manda CORS, qui va in catch con DOMException: abort/TypeError
+        if (!r.ok) {
+          const txt = await r.text().catch(()=>`HTTP ${r.status}`);
+          throw new Error(`Backend non ok: ${txt}`);
         }
 
-        // 2) dentro la finestra: invia telegram via backend
-        msg.textContent = "🔓 Apertura in corso...";
-        sub.textContent = "Un attimo mentre inviamo la richiesta.";
+        const j = await r.json();
+        console.log("← booking response:", j);
 
-        const resp = await fetch(${API_BASE}/open/${encodeURIComponent(bookingId)}, {
-          method: "GET",
-          cache: "no-store"
-        });
-        const tg = await resp.json().catch(()=> ({}));
+        if (!j.ok || !j.start || !j.end) {
+          throw new Error(j.error || "Risposta non valida dal backend");
+        }
 
-        if (resp.ok && tg && tg.ok){
-          msg.innerHTML = "🌞 La porta è aperta! Sali al secondo piano, porta destra, codice 0204.";
-          sub.textContent = "Mandaci un messaggino per confermare che siete a casa!";
+        // Confronto date in modo robusto
+        const startISO = j.start.split("T")[0];   // YYYY-MM-DD
+        const endISO   = j.end.split("T")[0];     // YYYY-MM-DD
+        const today    = new Date(); today.setHours(0,0,0,0);
+
+        const [sy, sm, sd] = startISO.split("-").map(Number);
+        const [ey, em, ed] = endISO.split("-").map(Number);
+        const start = new Date(sy, sm-1, sd);
+        const end   = new Date(ey, em-1, ed);
+
+        const inWindow = today >= start && today <= end;
+
+        if (inWindow) {
+          msg.className = "ok";
+          msg.textContent = "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta.";
+          sub.textContent = "Sali al secondo piano (porta destra). Keybox codice 0204.";
+          hint.textContent = "Invio conferma in corso…";
+
+          // Chiamo l'apertura (con cache-bust) e mostro eventuali errori
+          try {
+            const openUrl = `${API_BASE}/open/${encodeURIComponent(bookingId)}?t=${Date.now()}`;
+            console.log("→ OPEN", openUrl);
+            const or = await fetchWithTimeout(openUrl, { cache: "no-store", mode: "cors", timeout: 12000 });
+            const ot = await or.json().catch(()=> ({}));
+            console.log("← open response:", or.status, ot);
+            if (!(or.ok && ot && ot.ok)) {
+              hint.textContent = "⚠️ Telegram non confermato (ma la porta è aperta).";
+            } else {
+              hint.textContent = "✅ Conferma inviata.";
+            }
+          } catch (e) {
+            console.warn(e);
+            hint.textContent = "⚠️ Non riesco a inviare la conferma su Telegram.";
+          }
+
         } else {
-          const reason = (tg && (tg.description || tg.error)) || HTTP ${resp.status};
-          msg.textContent = "⚠ Invio Telegram fallito.";
-          sub.textContent = Dettagli: ${reason};
+          msg.className = "";
+          msg.textContent = `🚪 La porta si apre solo tra ${fmtISO(startISO)} e ${fmtISO(endISO)}.`;
+          sub.textContent = "Se hai bisogno di assistenza contattaci pure.";
         }
 
-      } catch(e){
-        console.error(e);
-        msg.textContent = "⚠ Errore durante il controllo prenotazione.";
-        sub.textContent = e.message || "Imprevisto.";
+      } catch (err) {
+        console.error(err);
+        msg.className = "err";
+        msg.textContent = "⚠️ Errore durante il controllo prenotazione.";
+        // Messaggio utile per i casi più comuni
+        if (String(err).includes("Failed to fetch") || String(err).includes("NetworkError") || String(err).includes("AbortError")) {
+          sub.textContent = "Il server non ha risposto o il browser ha bloccato la richiesta (CORS/timeout).";
+          hint.textContent = "Prova a ricaricare con Ctrl/Cmd-Shift-R. Se persiste, verifica CORS su Render.";
+        } else {
+          sub.textContent = String(err.message || err);
+        }
       }
     }
 
-    window.onload = init;
+    init();
   </script>
 </body>
 </html>
