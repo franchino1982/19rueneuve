@@ -17,10 +17,6 @@
     .ok{color:#0a6800;font-weight:700}
     .muted{font-size:16px;opacity:.8;margin-top:14px}
     .actions{margin-top:22px}
-    .btn-back{
-      display:inline-block; font-size:16px; padding:12px 18px; border-radius:10px;
-      border:1px solid #cfe6fb; background:#fff; color:#0a5aa6; cursor:pointer;
-    }
   </style>
 </head>
 <body>
@@ -29,9 +25,7 @@
     <div id="sub" class="sub"></div>
     <div id="hint" class="muted"></div>
     <div id="note" class="muted"></div>
-    <div class="actions">
-      <!-- TASTO GO BACK RIMOSSO -->
-    </div>
+    <div class="actions"><!-- Go back button removed --></div>
   </div>
 
   <script>
@@ -39,77 +33,57 @@
 
     // ===== i18n =====
     const M = {
-      it: {
-        waking: "⏳ Sto risvegliando il server…",
-        loading: "⏳ Controllo prenotazione…",
-        missing: "❌ Booking ID mancante.",
-        hintMissing: "Aggiungi ?b=NUMERO all’URL.",
-        okTitle: "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta.",
-        okSub: "Sali al secondo piano (porta destra). Keybox codice 0204.",
-        okHintSending: "Invio conferma in corso…",
-        okHintSent: "✅ Conferma inviata.",
-        okHintFail: "⚠️ Non riesco a inviare la conferma su Telegram.",
-        outside: (s,e)=>`🚪 La porta si apre solo tra ${s} e ${e}.`,
-        needHelp: "Se hai bisogno di assistenza contattaci pure.",
-        netErr: "⚠️ Errore durante il controllo prenotazione.",
-        netExplain: "Il server non ha risposto o il browser ha bloccato la richiesta (CORS/timeout).",
-        retryHint: "Riprova tra qualche secondo. Se persiste, verifica CORS su Render.",
-        pleaseVideo: "Per favore guardate il video di come aprire e chiudere la porta.",
-        back: "⬅ Torna indietro"
+      it: { waking:"⏳ Sto risvegliando il server…", loading:"⏳ Controllo prenotazione…",
+        missing:"❌ Booking ID mancante.", hintMissing:"Aggiungi ?b=NUMERO all’URL.",
+        okTitle:"🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta.",
+        okSub:"Sali al secondo piano (porta destra). Keybox codice 0204.",
+        okHintSending:"Invio conferma in corso…", okHintSent:"✅ Conferma inviata.",
+        okHintFail:"⚠️ Non riesco a inviare la conferma su Telegram.",
+        outside:(s,e)=>`🚪 La porta si apre solo tra ${s} e ${e}.`,
+        needHelp:"Se hai bisogno di assistenza contattaci pure.",
+        netErr:"⚠️ Errore durante il controllo prenotazione.",
+        netExplain:"Il server non ha risposto o il browser ha bloccato la richiesta (CORS/timeout).",
+        retryHint:"Riprova tra qualche secondo. Se persiste, verifica CORS su Render.",
+        pleaseVideo:"Per favore guardate il video di come aprire e chiudere la porta."
       },
-      en: {
-        waking: "⏳ Waking the server…",
-        loading: "⏳ Checking your booking…",
-        missing: "❌ Missing booking ID.",
-        hintMissing: "Append ?b=NUMBER to the URL.",
-        okTitle: "🌞 Your NeaSpace adventure starts now: the door is open.",
-        okSub: "Go to the second floor (right door). Keybox code 0204.",
-        okHintSending: "Sending confirmation…",
-        okHintSent: "✅ Confirmation sent.",
-        okHintFail: "⚠️ Unable to send the Telegram confirmation.",
-        outside: (s,e)=>`🚪 The door opens only between ${s} and ${e}.`,
-        needHelp: "If you need assistance, just let us know.",
-        netErr: "⚠️ Error while checking your booking.",
-        netExplain: "The server didn’t respond or the browser blocked the request (CORS/timeout).",
-        retryHint: "Please try again shortly. If it persists, check CORS on Render.",
-        pleaseVideo: "Please watch the video on how to open and close the door.",
-        back: "⬅ Go back"
+      en: { waking:"⏳ Waking the server…", loading:"⏳ Checking your booking…",
+        missing:"❌ Missing booking ID.", hintMissing:"Append ?b=NUMBER to the URL.",
+        okTitle:"🌞 Your NeaSpace adventure starts now: the door is open.",
+        okSub:"Go to the second floor (right door). Keybox code 0204.",
+        okHintSending:"Sending confirmation…", okHintSent:"✅ Confirmation sent.",
+        okHintFail:"⚠️ Unable to send the Telegram confirmation.",
+        outside:(s,e)=>`🚪 The door opens only between ${s} and ${e}.`,
+        needHelp:"If you need assistance, just let us know.",
+        netErr:"⚠️ Error while checking your booking.",
+        netExplain:"The server didn’t respond or the browser blocked the request (CORS/timeout).",
+        retryHint:"Please try again shortly. If it persists, check CORS on Render.",
+        pleaseVideo:"Please watch the video on how to open and close the door."
       },
-      fr: {
-        waking: "⏳ Réveil du serveur…",
-        loading: "⏳ Vérification de votre réservation…",
-        missing: "❌ ID de réservation manquant.",
-        hintMissing: "Ajoutez ?b=NUMÉRO à l’URL.",
-        okTitle: "🌞 Votre aventure NeaSpace commence maintenant : la porte est ouverte.",
-        okSub: "Montez au 2ᵉ étage (porte à droite). Boîte à clés code 0204.",
-        okHintSending: "Envoi de la confirmation…",
-        okHintSent: "✅ Confirmation envoyée.",
-        okHintFail: "⚠️ Impossible d’envoyer la confirmation Telegram.",
-        outside: (s,e)=>`🚪 La porte s’ouvre uniquement entre le ${s} et le ${e}.`,
-        needHelp: "Besoin d’aide ? Contactez-nous.",
-        netErr: "⚠️ Erreur lors de la vérification de la réservation.",
-        netExplain: "Le serveur n’a pas répondu ou le navigateur a bloqué la requête (CORS/timeout).",
-        retryHint: "Réessayez dans quelques instants. Si le problème persiste, vérifiez le CORS sur Render.",
-        pleaseVideo: "Merci de regarder la vidéo pour savoir comment ouvrir et fermer la porte.",
-        back: "⬅ Retour"
+      fr: { waking:"⏳ Réveil du serveur…", loading:"⏳ Vérification de votre réservation…",
+        missing:"❌ ID de réservation manquant.", hintMissing:"Ajoutez ?b=NUMÉRO à l’URL.",
+        okTitle:"🌞 Votre aventure NeaSpace commence maintenant : la porte est ouverte.",
+        okSub:"Montez au 2ᵉ étage (porte à droite). Boîte à clés code 0204.",
+        okHintSending:"Envoi de la confirmation…", okHintSent:"✅ Confirmation envoyée.",
+        okHintFail:"⚠️ Impossible d’envoyer la confirmation Telegram.",
+        outside:(s,e)=>`🚪 La porte s’ouvre uniquement entre le ${s} et le ${e}.`,
+        needHelp:"Besoin d’aide ? Contactez-nous.",
+        netErr:"⚠️ Erreur lors de la vérification de la réservation.",
+        netExplain:"Le serveur n’a pas répondu ou le navigateur a bloqué la requête (CORS/timeout).",
+        retryHint:"Réessayez dans quelques instants. Si le problème persiste, vérifiez le CORS sur Render.",
+        pleaseVideo:"Merci de regarder la vidéo pour savoir comment ouvrir et fermer la porte."
       },
-      es: {
-        waking: "⏳ Despertando el servidor…",
-        loading: "⏳ Verificando su reserva…",
-        missing: "❌ Falta el ID de la reserva.",
-        hintMissing: "Añada ?b=NÚMERO a la URL.",
-        okTitle: "🌞 Tu aventura en NeaSpace empieza ahora: la puerta está abierta.",
-        okSub: "Sube al segundo piso (puerta derecha). Código de la caja 0204.",
-        okHintSending: "Enviando confirmación…",
-        okHintSent: "✅ Confirmación enviada.",
-        okHintFail: "⚠️ No se pudo enviar la confirmación por Telegram.",
-        outside: (s,e)=>`🚪 La puerta solo se abre entre ${s} y ${e}.`,
-        needHelp: "Si necesitas ayuda, avísanos.",
-        netErr: "⚠️ Error al verificar la reserva.",
-        netExplain: "El servidor no respondió o el navegador bloqueó la solicitud (CORS/timeout).",
-        retryHint: "Inténtelo de nuevo en unos segundos. Si persiste, revise CORS en Render.",
-        pleaseVideo: "Por favor, miren el video de cómo abrir y cerrar la puerta.",
-        back: "⬅ Volver"
+      es: { waking:"⏳ Despertando el servidor…", loading:"⏳ Verificando su reserva…",
+        missing:"❌ Falta el ID de la reserva.", hintMissing:"Añada ?b=NÚMERO a la URL.",
+        okTitle:"🌞 Tu aventura en NeaSpace empieza ahora: la puerta está abierta.",
+        okSub:"Sube al segundo piso (puerta derecha). Código de la caja 0204.",
+        okHintSending:"Enviando confirmación…", okHintSent:"✅ Confirmación enviada.",
+        okHintFail:"⚠️ No se pudo enviar la confirmación por Telegram.",
+        outside:(s,e)=>`🚪 La puerta solo se abre entre ${s} y ${e}.`,
+        needHelp:"Si necesitas ayuda, avísanos.",
+        netErr:"⚠️ Error al verificar la reserva.",
+        netExplain:"El servidor no respondió o el navegador bloqueó la solicitud (CORS/timeout).",
+        retryHint:"Inténtelo de nuevo en unos segundos. Si persiste, revise CORS en Render.",
+        pleaseVideo:"Por favor, miren el video de cómo abrir y cerrar la puerta."
       }
     };
 
@@ -119,85 +93,58 @@
       return M[code] ? code : "en";
     }
 
-    // Util: timeout su fetch
     function fetchWithTimeout(resource, options = {}) {
-      const { timeout = 12000 } = options; // 12s
+      const { timeout = 12000 } = options;
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeout);
       return fetch(resource, { ...options, signal: controller.signal })
         .finally(() => clearTimeout(id));
     }
 
-    // Util: dormi ms
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-    // Warm-up Render: prova /healthz finché non risponde ok (max ~25s)
-    async function warmUpServer(i18n){
+    // Warm-up parallelo: healthz + booking ping
+    async function warmUpServerParallel(bookingId, i18n){
       const msg = document.getElementById("msg");
-      msg.textContent = i18n.waking;
+      if (msg && i18n && i18n.waking) {
+        msg.textContent = i18n.waking + " (potrebbe richiedere fino a 60s)";
+      }
+
       let delay = 700;
       const t0 = Date.now();
-      while (Date.now() - t0 < 25000) {
+      while (Date.now() - t0 < 65000) {
         try {
-          const r = await fetchWithTimeout(`${API_BASE}/healthz?ts=${Date.now()}`, { cache: "no-store", timeout: 5000 });
-          if (r.ok) return true;
+          const healthz = fetchWithTimeout(`${API_BASE}/healthz?ts=${Date.now()}`, {
+            cache: "no-store", timeout: 7000
+          });
+          const bookingPing = fetchWithTimeout(
+            `${API_BASE}/booking/${encodeURIComponent(bookingId)}?ping=1&t=${Date.now()}`,
+            { cache: "no-store", mode: "cors", timeout: 12000 }
+          );
+          const res = await Promise.any([healthz, bookingPing]);
+          if (res && res.ok) return true;
         } catch (_) {}
         await sleep(delay);
-        delay = Math.min(delay * 1.6, 3000);
+        delay = Math.min(delay * 1.6, 3500);
       }
       return false;
     }
 
-    // Date ISO -> "DD/MM/YYYY" (stabile su tutti i browser)
     function fmtISO(iso){
       const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`;
     }
 
-    // Auto-close dopo risposta backend (15s), con fallback intelligenti
+    // Auto-close dopo 15s dalla risposta
     function scheduleAutoClose() {
-      const seconds = 15;
-      const sub = document.getElementById("sub");
-      let left = seconds;
-
-      // piccolo countdown testuale non invasivo (resta dov'è il sub)
-      const timer = setInterval(() => {
-        left--;
-        if (left <= 0) {
-          clearInterval(timer);
-          tryCloseOrReturn();
-        } else {
-          // mostra il countdown solo se c'è già un sub-test (non aggiungo nuovo markup)
-          if (sub && sub.textContent) {
-            sub.textContent = sub.textContent.replace(/\s*\(\d+s\)$/,'') + ` (${left}s)`;
-          }
-        }
-      }, 1000);
-
-      function tryCloseOrReturn() {
-        // 1) se aperta via window.open, prova a chiudere
-        if (window.opener && !window.opener.closed) {
-          try { window.close(); return; } catch(e) {}
-        }
-        // 2) alcuni browser consentono questo pattern
+      setTimeout(() => {
         try {
-          window.open('', '_self');
-          window.close();
-          return;
-        } catch(e) {}
-        // 3) referrer (Guest Guide variabile)
-        if (document.referrer) {
-          location.href = document.referrer;
-          return;
-        }
-        // 4) history, se disponibile
-        if (history.length > 1) {
-          history.back();
-          return;
-        }
-        // 5) ultimo fallback: avviso minimal
-        const hint = document.getElementById("hint");
-        if (hint) hint.textContent = "Puoi ora chiudere questa scheda e tornare alla tua guida.";
-      }
+          if (window.opener && !window.opener.closed) { window.close(); return; }
+          window.open('', '_self'); window.close();
+        } catch(e){}
+        if (document.referrer) { location.href = document.referrer; return; }
+        if (history.length > 1) { history.back(); return; }
+        document.getElementById("hint").textContent = "Puoi chiudere questa scheda e tornare alla guida.";
+      }, 15000);
     }
 
     async function init(){
@@ -216,48 +163,34 @@
         msg.textContent = T.missing;
         sub.textContent = T.hintMissing;
         msg.className = "err";
-        return; // niente risposta backend -> non chiudo
+        return;
       }
 
-      // 1) Warm-up server
-      const awake = await warmUpServer(T);
+      const awake = await warmUpServerParallel(bookingId, T);
       if (!awake) {
         msg.className = "err";
         msg.textContent = T.netErr;
         sub.textContent = T.netExplain;
         hint.textContent = T.retryHint;
-        return; // niente risposta backend -> non chiudo
+        return;
       }
 
-      // 2) Controllo prenotazione
-      msg.textContent = T.loading;
-      sub.textContent = "";
-      hint.textContent = "";
-      note.textContent = "";
+      msg.textContent = T.loading; sub.textContent = ""; hint.textContent = ""; note.textContent = "";
 
       try {
         const url = `${API_BASE}/booking/${encodeURIComponent(bookingId)}?t=${Date.now()}`;
-        const r = await fetchWithTimeout(url, { cache: "no-store", mode: "cors", timeout: 12000 });
+        const r = await fetchWithTimeout(url, { cache:"no-store", mode:"cors", timeout:18000 });
 
-        if (!r.ok) {
-          const txt = await r.text().catch(()=>`HTTP ${r.status}`);
-          throw new Error(`Backend non ok: ${txt}`);
-        }
-
+        if (!r.ok) throw new Error(`Backend non ok: ${await r.text().catch(()=>`HTTP ${r.status}`)}`);
         const j = await r.json();
-        if (!j.ok || !j.start || !j.end) {
-          throw new Error(j.error || "Risposta non valida dal backend");
-        }
+        if (!j.ok || !j.start || !j.end) throw new Error(j.error || "Risposta non valida");
 
-        const startISO = j.start.split("T")[0];   // YYYY-MM-DD
-        const endISO   = j.end.split("T")[0];     // YYYY-MM-DD
+        const startISO = j.start.split("T")[0];
+        const endISO   = j.end.split("T")[0];
         const today    = new Date(); today.setHours(0,0,0,0);
 
-        const [sy, sm, sd] = startISO.split("-").map(Number);
-        const [ey, em, ed] = endISO.split("-").map(Number);
-        const start = new Date(sy, sm-1, sd);
-        const end   = new Date(ey, em-1, ed);
-
+        const start = new Date(...startISO.split("-").map((n,i)=>i==1?Number(n)-1:Number(n)));
+        const end   = new Date(...endISO.split("-").map((n,i)=>i==1?Number(n)-1:Number(n)));
         const inWindow = today >= start && today <= end;
 
         if (inWindow) {
@@ -267,46 +200,28 @@
           note.textContent = T.pleaseVideo;
           hint.textContent = T.okHintSending;
 
-          // apertura e notifica
           try {
             const openUrl = `${API_BASE}/open/${encodeURIComponent(bookingId)}?t=${Date.now()}`;
-            const or = await fetchWithTimeout(openUrl, { cache: "no-store", mode: "cors", timeout: 12000 });
+            const or = await fetchWithTimeout(openUrl, { cache:"no-store", mode:"cors", timeout:18000 });
             const ot = await or.json().catch(()=> ({}));
-            if (!(or.ok && ot && ot.ok)) {
-              hint.textContent = T.okHintFail;
-            } else {
-              hint.textContent = T.okHintSent;
-            }
-          } catch (e) {
-            hint.textContent = T.okHintFail;
-          }
+            hint.textContent = (or.ok && ot && ot.ok) ? T.okHintSent : T.okHintFail;
+          } catch (e) { hint.textContent = T.okHintFail; }
 
-          // risposta backend avvenuta -> programma autoclose
           scheduleAutoClose();
 
         } else {
-          msg.className = "";
           msg.textContent = T.outside(fmtISO(startISO), fmtISO(endISO));
           sub.textContent = T.needHelp;
           note.textContent = T.pleaseVideo;
-
-          // risposta backend avvenuta (fuori finestra) -> programma autoclose
           scheduleAutoClose();
         }
 
       } catch (err) {
-        msg.className = "err";
-        msg.textContent = T.netErr;
-        if (String(err).includes("Failed to fetch") || String(err).includes("NetworkError") || String(err).includes("AbortError")) {
-          sub.textContent = T.netExplain;
-          hint.textContent = T.retryHint;
-        } else {
-          sub.textContent = String(err.message || err);
-        }
-        // niente risposta backend valida -> NON chiudo automaticamente
+        msg.className = "err"; msg.textContent = T.netErr;
+        sub.textContent = (String(err).includes("fetch") ? T.netExplain : String(err.message||err));
+        hint.textContent = T.retryHint;
       }
     }
-
     init();
   </script>
 </body>
