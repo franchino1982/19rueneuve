@@ -16,6 +16,11 @@
     .err{color:#b00020;font-weight:700}
     .ok{color:#0a6800;font-weight:700}
     .muted{font-size:16px;opacity:.8;margin-top:14px}
+    .actions{margin-top:22px}
+    .btn-back{
+      display:inline-block; font-size:16px; padding:12px 18px; border-radius:10px;
+      border:1px solid #cfe6fb; background:#fff; color:#0a5aa6; cursor:pointer;
+    }
   </style>
 </head>
 <body>
@@ -23,10 +28,96 @@
     <div id="msg">⏳ Controllo prenotazione.</div>
     <div id="sub" class="sub"></div>
     <div id="hint" class="muted"></div>
+    <div id="note" class="muted"></div>
+    <div class="actions">
+      <button id="backBtn" class="btn-back" style="display:none" onclick="goBack()"></button>
+    </div>
   </div>
 
   <script>
     const API_BASE = "https://one9rueneuve.onrender.com";
+
+    // ===== i18n =====
+    const M = {
+      it: {
+        waking: "⏳ Sto risvegliando il server…",
+        loading: "⏳ Controllo prenotazione…",
+        missing: "❌ Booking ID mancante.",
+        hintMissing: "Aggiungi ?b=NUMERO all’URL.",
+        okTitle: "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta.",
+        okSub: "Sali al secondo piano (porta destra). Keybox codice 0204.",
+        okHintSending: "Invio conferma in corso…",
+        okHintSent: "✅ Conferma inviata.",
+        okHintFail: "⚠️ Non riesco a inviare la conferma su Telegram.",
+        outside: (s,e)=>`🚪 La porta si apre solo tra ${s} e ${e}.`,
+        needHelp: "Se hai bisogno di assistenza contattaci pure.",
+        netErr: "⚠️ Errore durante il controllo prenotazione.",
+        netExplain: "Il server non ha risposto o il browser ha bloccato la richiesta (CORS/timeout).",
+        retryHint: "Riprova tra qualche secondo. Se persiste, verifica CORS su Render.",
+        pleaseVideo: "Per favore guardate il video di come aprire e chiudere la porta.",
+        back: "⬅ Torna indietro"
+      },
+      en: {
+        waking: "⏳ Waking the server…",
+        loading: "⏳ Checking your booking…",
+        missing: "❌ Missing booking ID.",
+        hintMissing: "Append ?b=NUMBER to the URL.",
+        okTitle: "🌞 Your NeaSpace adventure starts now: the door is open.",
+        okSub: "Go to the second floor (right door). Keybox code 0204.",
+        okHintSending: "Sending confirmation…",
+        okHintSent: "✅ Confirmation sent.",
+        okHintFail: "⚠️ Unable to send the Telegram confirmation.",
+        outside: (s,e)=>`🚪 The door opens only between ${s} and ${e}.`,
+        needHelp: "If you need assistance, just let us know.",
+        netErr: "⚠️ Error while checking your booking.",
+        netExplain: "The server didn’t respond or the browser blocked the request (CORS/timeout).",
+        retryHint: "Please try again shortly. If it persists, check CORS on Render.",
+        pleaseVideo: "Please watch the video on how to open and close the door.",
+        back: "⬅ Go back"
+      },
+      fr: {
+        waking: "⏳ Réveil du serveur…",
+        loading: "⏳ Vérification de votre réservation…",
+        missing: "❌ ID de réservation manquant.",
+        hintMissing: "Ajoutez ?b=NUMÉRO à l’URL.",
+        okTitle: "🌞 Votre aventure NeaSpace commence maintenant : la porte est ouverte.",
+        okSub: "Montez au 2ᵉ étage (porte à droite). Boîte à clés code 0204.",
+        okHintSending: "Envoi de la confirmation…",
+        okHintSent: "✅ Confirmation envoyée.",
+        okHintFail: "⚠️ Impossible d’envoyer la confirmation Telegram.",
+        outside: (s,e)=>`🚪 La porte s’ouvre uniquement entre le ${s} et le ${e}.`,
+        needHelp: "Besoin d’aide ? Contactez-nous.",
+        netErr: "⚠️ Erreur lors de la vérification de la réservation.",
+        netExplain: "Le serveur n’a pas répondu ou le navigateur a bloqué la requête (CORS/timeout).",
+        retryHint: "Réessayez dans quelques instants. Si le problème persiste, vérifiez le CORS sur Render.",
+        pleaseVideo: "Merci de regarder la vidéo pour savoir comment ouvrir et fermer la porte.",
+        back: "⬅ Retour"
+      },
+      es: {
+        waking: "⏳ Despertando el servidor…",
+        loading: "⏳ Verificando su reserva…",
+        missing: "❌ Falta el ID de la reserva.",
+        hintMissing: "Añada ?b=NÚMERO a la URL.",
+        okTitle: "🌞 Tu aventura en NeaSpace empieza ahora: la puerta está abierta.",
+        okSub: "Sube al segundo piso (puerta derecha). Código de la caja 0204.",
+        okHintSending: "Enviando confirmación…",
+        okHintSent: "✅ Confirmación enviada.",
+        okHintFail: "⚠️ No se pudo enviar la confirmación por Telegram.",
+        outside: (s,e)=>`🚪 La puerta solo se abre entre ${s} y ${e}.`,
+        needHelp: "Si necesitas ayuda, avísanos.",
+        netErr: "⚠️ Error al verificar la reserva.",
+        netExplain: "El servidor no respondió o el navegador bloqueó la solicitud (CORS/timeout).",
+        retryHint: "Inténtelo de nuevo en unos segundos. Si persiste, revise CORS en Render.",
+        pleaseVideo: "Por favor, miren el video de cómo abrir y cerrar la puerta.",
+        back: "⬅ Volver"
+      }
+    };
+
+    function detectLang(){
+      const cand = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+      const code = cand.slice(0,2).toLowerCase();
+      return M[code] ? code : "en";
+    }
 
     // Util: timeout su fetch
     function fetchWithTimeout(resource, options = {}) {
@@ -37,49 +128,88 @@
         .finally(() => clearTimeout(id));
     }
 
+    // Util: dormi ms
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // Warm-up Render: prova /healthz finché non risponde ok (max ~25s)
+    async function warmUpServer(i18n){
+      const msg = document.getElementById("msg");
+      msg.textContent = i18n.waking;
+      let delay = 700;
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        try {
+          const r = await fetchWithTimeout(`${API_BASE}/healthz?ts=${Date.now()}`, { cache: "no-store", timeout: 5000 });
+          if (r.ok) return true;
+        } catch (_) {}
+        await sleep(delay);
+        delay = Math.min(delay * 1.6, 3000);
+      }
+      return false;
+    }
+
     // Date ISO -> "DD/MM/YYYY" (stabile su tutti i browser)
     function fmtISO(iso){
       const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`;
     }
 
+    function goBack(){
+      if (document.referrer) history.back();
+      else location.href = "https://guest.smoobu.com/";
+    }
+
     async function init(){
+      const lang = detectLang();
+      const T = M[lang];
+      document.documentElement.lang = lang;
+
       const msg = document.getElementById("msg");
       const sub = document.getElementById("sub");
       const hint = document.getElementById("hint");
+      const note = document.getElementById("note");
+      const backBtn = document.getElementById("backBtn");
+      backBtn.textContent = T.back;
+      backBtn.style.display = "inline-block";
 
       const bookingIdRaw = new URL(location.href).searchParams.get("b");
       const bookingId = bookingIdRaw ? bookingIdRaw.replace(/\D/g,"") : "";
       if (!bookingId) {
-        msg.textContent = "❌ Booking ID mancante.";
-        sub.textContent = "Aggiungi ?b=NUMERO all’URL.";
+        msg.textContent = T.missing;
+        sub.textContent = T.hintMissing;
         msg.className = "err";
         return;
       }
 
-      msg.textContent = "⏳ Controllo prenotazione…";
+      // 1) Warm-up server
+      const awake = await warmUpServer(T);
+      if (!awake) {
+        msg.className = "err";
+        msg.textContent = T.netErr;
+        sub.textContent = T.netExplain;
+        hint.textContent = T.retryHint;
+        return;
+      }
+
+      // 2) Controllo prenotazione
+      msg.textContent = T.loading;
       sub.textContent = "";
       hint.textContent = "";
+      note.textContent = "";
 
       try {
-        // bust cache del backend
         const url = `${API_BASE}/booking/${encodeURIComponent(bookingId)}?t=${Date.now()}`;
-        console.log("→ GET", url);
         const r = await fetchWithTimeout(url, { cache: "no-store", mode: "cors", timeout: 12000 });
 
-        // Se il server non manda CORS, qui va in catch con DOMException: abort/TypeError
         if (!r.ok) {
           const txt = await r.text().catch(()=>`HTTP ${r.status}`);
           throw new Error(`Backend non ok: ${txt}`);
         }
 
         const j = await r.json();
-        console.log("← booking response:", j);
-
         if (!j.ok || !j.start || !j.end) {
           throw new Error(j.error || "Risposta non valida dal backend");
         }
 
-        // Confronto date in modo robusto
         const startISO = j.start.split("T")[0];   // YYYY-MM-DD
         const endISO   = j.end.split("T")[0];     // YYYY-MM-DD
         const today    = new Date(); today.setHours(0,0,0,0);
@@ -93,41 +223,38 @@
 
         if (inWindow) {
           msg.className = "ok";
-          msg.textContent = "🌞 La tua avventura a NeaSpace inizia ora: la porta è aperta.";
-          sub.textContent = "Sali al secondo piano (porta destra). Keybox codice 0204.";
-          hint.textContent = "Invio conferma in corso…";
+          msg.textContent = T.okTitle;
+          sub.textContent = T.okSub;
+          note.textContent = T.pleaseVideo;
+          hint.textContent = T.okHintSending;
 
-          // Chiamo l'apertura (con cache-bust) e mostro eventuali errori
+          // apertura e notifica
           try {
             const openUrl = `${API_BASE}/open/${encodeURIComponent(bookingId)}?t=${Date.now()}`;
-            console.log("→ OPEN", openUrl);
             const or = await fetchWithTimeout(openUrl, { cache: "no-store", mode: "cors", timeout: 12000 });
             const ot = await or.json().catch(()=> ({}));
-            console.log("← open response:", or.status, ot);
             if (!(or.ok && ot && ot.ok)) {
-              hint.textContent = "⚠️ Telegram non confermato (ma la porta è aperta).";
+              hint.textContent = T.okHintFail;
             } else {
-              hint.textContent = "✅ Conferma inviata.";
+              hint.textContent = T.okHintSent;
             }
           } catch (e) {
-            console.warn(e);
-            hint.textContent = "⚠️ Non riesco a inviare la conferma su Telegram.";
+            hint.textContent = T.okHintFail;
           }
 
         } else {
           msg.className = "";
-          msg.textContent = `🚪 La porta si apre solo tra ${fmtISO(startISO)} e ${fmtISO(endISO)}.`;
-          sub.textContent = "Se hai bisogno di assistenza contattaci pure.";
+          msg.textContent = T.outside(fmtISO(startISO), fmtISO(endISO));
+          sub.textContent = T.needHelp;
+          note.textContent = T.pleaseVideo;
         }
 
       } catch (err) {
-        console.error(err);
         msg.className = "err";
-        msg.textContent = "⚠️ Errore durante il controllo prenotazione.";
-        // Messaggio utile per i casi più comuni
+        msg.textContent = T.netErr;
         if (String(err).includes("Failed to fetch") || String(err).includes("NetworkError") || String(err).includes("AbortError")) {
-          sub.textContent = "Il server non ha risposto o il browser ha bloccato la richiesta (CORS/timeout).";
-          hint.textContent = "Prova a ricaricare con Ctrl/Cmd-Shift-R. Se persiste, verifica CORS su Render.";
+          sub.textContent = T.netExplain;
+          hint.textContent = T.retryHint;
         } else {
           sub.textContent = String(err.message || err);
         }
