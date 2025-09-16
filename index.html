@@ -30,7 +30,7 @@
     <div id="hint" class="muted"></div>
     <div id="note" class="muted"></div>
     <div class="actions">
-      <button id="backBtn" class="btn-back" style="display:none" onclick="goBack()"></button>
+      <!-- TASTO GO BACK RIMOSSO -->
     </div>
   </div>
 
@@ -153,9 +153,51 @@
       const [y,m,d] = iso.split("-"); return `${d}/${m}/${y}`;
     }
 
-    function goBack(){
-      if (document.referrer) history.back();
-      else location.href = "https://guest.smoobu.com/";
+    // Auto-close dopo risposta backend (15s), con fallback intelligenti
+    function scheduleAutoClose() {
+      const seconds = 15;
+      const sub = document.getElementById("sub");
+      let left = seconds;
+
+      // piccolo countdown testuale non invasivo (resta dov'è il sub)
+      const timer = setInterval(() => {
+        left--;
+        if (left <= 0) {
+          clearInterval(timer);
+          tryCloseOrReturn();
+        } else {
+          // mostra il countdown solo se c'è già un sub-test (non aggiungo nuovo markup)
+          if (sub && sub.textContent) {
+            sub.textContent = sub.textContent.replace(/\s*\(\d+s\)$/,'') + ` (${left}s)`;
+          }
+        }
+      }, 1000);
+
+      function tryCloseOrReturn() {
+        // 1) se aperta via window.open, prova a chiudere
+        if (window.opener && !window.opener.closed) {
+          try { window.close(); return; } catch(e) {}
+        }
+        // 2) alcuni browser consentono questo pattern
+        try {
+          window.open('', '_self');
+          window.close();
+          return;
+        } catch(e) {}
+        // 3) referrer (Guest Guide variabile)
+        if (document.referrer) {
+          location.href = document.referrer;
+          return;
+        }
+        // 4) history, se disponibile
+        if (history.length > 1) {
+          history.back();
+          return;
+        }
+        // 5) ultimo fallback: avviso minimal
+        const hint = document.getElementById("hint");
+        if (hint) hint.textContent = "Puoi ora chiudere questa scheda e tornare alla tua guida.";
+      }
     }
 
     async function init(){
@@ -167,9 +209,6 @@
       const sub = document.getElementById("sub");
       const hint = document.getElementById("hint");
       const note = document.getElementById("note");
-      const backBtn = document.getElementById("backBtn");
-      backBtn.textContent = T.back;
-      backBtn.style.display = "inline-block";
 
       const bookingIdRaw = new URL(location.href).searchParams.get("b");
       const bookingId = bookingIdRaw ? bookingIdRaw.replace(/\D/g,"") : "";
@@ -177,7 +216,7 @@
         msg.textContent = T.missing;
         sub.textContent = T.hintMissing;
         msg.className = "err";
-        return;
+        return; // niente risposta backend -> non chiudo
       }
 
       // 1) Warm-up server
@@ -187,7 +226,7 @@
         msg.textContent = T.netErr;
         sub.textContent = T.netExplain;
         hint.textContent = T.retryHint;
-        return;
+        return; // niente risposta backend -> non chiudo
       }
 
       // 2) Controllo prenotazione
@@ -242,11 +281,17 @@
             hint.textContent = T.okHintFail;
           }
 
+          // risposta backend avvenuta -> programma autoclose
+          scheduleAutoClose();
+
         } else {
           msg.className = "";
           msg.textContent = T.outside(fmtISO(startISO), fmtISO(endISO));
           sub.textContent = T.needHelp;
           note.textContent = T.pleaseVideo;
+
+          // risposta backend avvenuta (fuori finestra) -> programma autoclose
+          scheduleAutoClose();
         }
 
       } catch (err) {
@@ -258,6 +303,7 @@
         } else {
           sub.textContent = String(err.message || err);
         }
+        // niente risposta backend valida -> NON chiudo automaticamente
       }
     }
 
